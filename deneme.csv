@@ -1,0 +1,3 @@
+,filename,filecategory,fileloc,ExpectedFaces
+0,single_1.jpg,single,/home/pi/Documents/LAP/Faces/single_1.jpg,1
+1,multi_1.jpg,multi,/home/pi/Documents/LAP/Faces/multi_1.jpg,5
