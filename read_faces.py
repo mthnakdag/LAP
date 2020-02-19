@@ -2,8 +2,14 @@
 from Jpgs import JpgsFrames
 import pandas as pd
 import cv2
+import time
+
+
 Jpgsframe = JpgsFrames()
 Jpgsframe.createDataFrame()
 Jpgsframe.addactualtoframe(1,5)
-Jpgsframe.saveCsv("deneme")
 
+
+Jpgsframe.findFace("haarcascade")
+Jpgsframe.findFace("dnn")
+Jpgsframe.saveCsv("deneme")
