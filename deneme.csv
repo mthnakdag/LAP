@@ -1,3 +1,3 @@
-,filename,filecategory,fileloc,ExpectedFaces,haarcascade-MS,haarcascade-FindingFace,dnn-MS,dnn-FindingFace
-0,single_1.jpg,single,/home/pi/LAP/Faces/single_1.jpg,1,17.303109169006348,1,17.812180519104004,1
-1,multi_1.jpg,multi,/home/pi/LAP/Faces/multi_1.jpg,5,19.32682991027832,5,17.58425235748291,5
+,filename,filecategory,fileloc,ExpectedFaces,haarcascade-MS,haarcascade-FindingFace,dnn-MS,dnn-FindingFace,hogdlib-MS,hogdlib-FindingFace,cnndlib-MS,cnndlib-FindingFace
+0,single_1.jpg,single,/home/pi/LAP/Faces/single_1.jpg,1,19.9110746383667,1,17.59772300720215,1,5.894112586975098,1,317.557168006897,1
+1,multi_1.jpg,multi,/home/pi/LAP/Faces/multi_1.jpg,5,21.497583389282227,5,16.83986186981201,5,4.4402360916137695,5,225.3706455230713,5

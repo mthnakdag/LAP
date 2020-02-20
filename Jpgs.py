@@ -3,6 +3,8 @@ import pandas as pd
 import cv2
 import time
 import numpy as np
+import dlib
+
 class JpgsFrames:
     
     def __init__(self, df=dict()):
@@ -59,9 +61,9 @@ class JpgsFrames:
                 cv2.putText(img,str(round((end-start)*100,2))+"ms",(10,30),cv2.FONT_HERSHEY_COMPLEX,0.7,(255,255,255))
                 cv2.imwrite((path+imagename),img)
         
-        if  algorithm_name == "dnn":
-            modelfile = "/home/pi/LAP/AdditionalFiles/res10_300x300_ssd_iter_140000_fp16 .caffemodel"
-            configfile = "/home/pi/LAP/AdditionalFiles/deploy.prototxt"
+        elif  algorithm_name == "dnn":
+            modelfile = os.sep.join([os.getcwd(),"AdditionalFiles","res10_300x300_ssd_iter_140000_fp16 .caffemodel"])
+            configfile = os.sep.join([os.getcwd(),"AdditionalFiles","deploy.prototxt"])
             net = cv2.dnn.readNetFromCaffe(configfile,modelfile)
             for imagename,imageloc in zip(self.df["filename"].tolist(),self.df["fileloc"].tolist()):
                 img = cv2.imread(imageloc)
@@ -87,6 +89,47 @@ class JpgsFrames:
                 cv2.rectangle(img,(10,10), (120,30), (0,0,0),35)
                 cv2.putText(img,str(round((end-start)*100,2))+"ms",(10,30),cv2.FONT_HERSHEY_COMPLEX,0.7,(255,255,255))
                 cv2.imwrite((path+imagename),img)
+                
+        elif  algorithm_name == "hogdlib":
+            hogFaceDetector = dlib.get_frontal_face_detector() 
+            for imagename,imageloc in zip(self.df["filename"].tolist(),self.df["fileloc"].tolist()):
+                img = cv2.imread(imageloc,cv2.IMREAD_GRAYSCALE)
+                start = time.time()
+                faces = hogFaceDetector(img)
+                end = time.time()
+                for face in faces:
+                    startX = face.left()
+                    startY = face.top()
+                    endX = face.right()
+                    endY = face.bottom()
+                    cv2.rectangle(img,(startX,startY),(endX,endY),(0,0,255),2)
+                mslist.append((end-start)*100)
+                findface.append(len(faces))
+                cv2.rectangle(img,(10,10), (120,30), (0,0,0),35)
+                cv2.putText(img,str(round((end-start)*100,2))+"ms",(10,30),cv2.FONT_HERSHEY_COMPLEX,0.7,(255,255,255))
+                cv2.imwrite((path+imagename),img)
+                
+                
+        elif  algorithm_name == "cnndlib":
+            facedata = os.sep.join([os.getcwd(),"AdditionalFiles","mmod_human_face_detector.dat"])
+            cnnFaceDetector = dlib.cnn_face_detection_model_v1(facedata) 
+            for imagename,imageloc in zip(self.df["filename"].tolist(),self.df["fileloc"].tolist()):
+                img = cv2.imread(imageloc,cv2.IMREAD_GRAYSCALE)
+                start = time.time()
+                faces = cnnFaceDetector(img,0)
+                end = time.time()
+                for face in faces:
+                    startX = face.rect.left()
+                    startY = face.rect.top()
+                    endX = face.rect.right()
+                    endY = face.rect.bottom()
+                    cv2.rectangle(img,(startX,startY),(endX,endY),(0,0,255),2)
+                mslist.append((end-start)*100)
+                findface.append(len(faces))
+                cv2.rectangle(img,(10,10), (120,30), (0,0,0),35)
+                cv2.putText(img,str(round((end-start)*100,2))+"ms",(10,30),cv2.FONT_HERSHEY_COMPLEX,0.7,(255,255,255))
+                cv2.imwrite((path+imagename),img)
         
+
         self.df[algorithm_name+"-MS"] = mslist
         self.df[algorithm_name+"-FindingFace"] = findface
