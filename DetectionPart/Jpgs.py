@@ -9,33 +9,49 @@ class JpgsFrames:
     
     def __init__(self, df=dict()):
         self.df = pd.DataFrame(df)
-        
-    def findJpgs(self,rootdir=os.sep.join([os.getcwd(),"Faces"])):
-        filelist = []
+    def findPaths(self,rootdir=os.sep.join([os.path.abspath('..'),'ImgsPart','for_face_detection'])):
+        jpgsfilelist = list()
         for subdir, dirs, files in os.walk(rootdir):
             for file in files:
                 filepath = subdir + os.sep + file
                 if filepath.endswith(".jpg"):
-                    filelist.append(filepath)
-        return filelist
+                    jpgsfilelist.append(filepath)
+        jpgsfilelist.sort()
+        return jpgsfilelist
     
     def createDataFrame(self,files=None):
         if files == None:
-            files = self.findJpgs()
+            files = self.findPaths()
         filenames=list()
         filecategories=list()
         filelocs=list()
         for file in files:
             filenames.append(file.split('/')[-1])
-            filecategories.append(file.split('/')[-1].split('_')[0])
+            filecategories.append(file.split('/')[-2])
             filelocs.append(file)
         df = {'filename':filenames , 'filecategory':filecategories ,
                   'fileloc': filelocs}
         self.df = pd.DataFrame(df)
         return self.df
     
-    def addactualtoframe(self, *lis):
-        self.df["ExpectedFaces"]= lis
+    def addactualtoframe(self, rootdir= None):
+        if rootdir == None:
+            rootdir=os.sep.join([os.path.abspath('..'),'ImgsPart','for_face_detection'])
+        txtfilelist = list()
+        actualfacelist = list()
+        for subdir, dirs, files in os.walk(rootdir):
+            for file in files:
+                filepath = subdir + os.sep + file
+                if filepath.endswith(".txt"):
+                    txtfilelist.append(filepath)
+        txtfilelist.sort()
+        for txtfile in txtfilelist:
+            file = open(txtfile,'r')
+            for elem in file:
+                elem = elem.split()
+                for e in elem:   
+                    actualfacelist.append(int(e))
+        self.df["ExpectedFaces"]= actualfacelist
         return self.df
     def saveCsv(self,filename):  
         self.df.to_csv(filename+".csv")
@@ -45,10 +61,16 @@ class JpgsFrames:
         path = os.sep.join([os.getcwd(),"DetectedFaces",algorithm_name])+os.sep
         mslist=list()
         findface=list()
-        
+        folderlist = list(self.df['filecategory'].unique())
+        for folder in folderlist:
+            try:
+                os.mkdir(path+str(folder))
+            except OSError:
+                print("This directory existed")            
+
         if  algorithm_name == "haarcascade":
             faceCascade = cv2.CascadeClassifier(cv2.data.haarcascades+"haarcascade_frontalface_default.xml")
-            for imagename,imageloc in zip(self.df["filename"].tolist(),self.df["fileloc"].tolist()):
+            for imagename,imagecat,imageloc in zip(self.df["filename"].tolist(),self.df["filecategory"].tolist(),self.df["fileloc"].tolist()):
                 img = cv2.imread(imageloc,cv2.IMREAD_GRAYSCALE)
                 start = time.time()
                 faces = faceCascade.detectMultiScale(img)
@@ -57,15 +79,19 @@ class JpgsFrames:
                     cv2.rectangle(img,(x,y),(x+w,y+h),(0,0,255),2)
                 mslist.append((end-start)*100)
                 findface.append(len(faces))
-                cv2.rectangle(img,(10,10), (120,30), (0,0,0),35)
+                if img.shape[0]>img.shape[1]:
+                    cv2.rectangle(img,(0,0), (img.shape[0]//5,img.shape[1]//8), (0,0,0), thickness =cv2.FILLED)
+                else:
+                    cv2.rectangle(img,(0,0), (img.shape[1]//5,img.shape[0]//8), (0,0,0), thickness =cv2.FILLED)
                 cv2.putText(img,str(round((end-start)*100,2))+"ms",(10,30),cv2.FONT_HERSHEY_COMPLEX,0.7,(255,255,255))
-                cv2.imwrite((path+imagename),img)
-        
+                cv2.imwrite(os.sep.join([path+imagecat,imagename]),img)
+                print(os.sep.join([path+imagecat,imagename]))
+                
         elif  algorithm_name == "dnn":
             modelfile = os.sep.join([os.getcwd(),"AdditionalFiles","res10_300x300_ssd_iter_140000_fp16 .caffemodel"])
             configfile = os.sep.join([os.getcwd(),"AdditionalFiles","deploy.prototxt"])
             net = cv2.dnn.readNetFromCaffe(configfile,modelfile)
-            for imagename,imageloc in zip(self.df["filename"].tolist(),self.df["fileloc"].tolist()):
+            for imagename,imagecat,imageloc in zip(self.df["filename"].tolist(),self.df["filecategory"].tolist(),self.df["fileloc"].tolist()):
                 img = cv2.imread(imageloc)
                 h,w = img.shape[:2]
                 start = time.time()
@@ -86,13 +112,17 @@ class JpgsFrames:
                         cv2.rectangle(img,(startX,startY),(endX,endY),(0,0,255),2)
                 mslist.append((end-start)*100)
                 findface.append(numofface)
-                cv2.rectangle(img,(10,10), (120,30), (0,0,0),35)
+                if img.shape[0]>img.shape[1]:
+                    cv2.rectangle(img,(0,0), (img.shape[0]//5,img.shape[1]//8), (0,0,0), thickness =cv2.FILLED)
+                else:
+                    cv2.rectangle(img,(0,0), (img.shape[1]//5,img.shape[0]//8), (0,0,0), thickness =cv2.FILLED)
                 cv2.putText(img,str(round((end-start)*100,2))+"ms",(10,30),cv2.FONT_HERSHEY_COMPLEX,0.7,(255,255,255))
-                cv2.imwrite((path+imagename),img)
+                cv2.imwrite(os.sep.join([path+imagecat,imagename]),img)
+                print(os.sep.join([path+imagecat,imagename]))
                 
         elif  algorithm_name == "hogdlib":
             hogFaceDetector = dlib.get_frontal_face_detector() 
-            for imagename,imageloc in zip(self.df["filename"].tolist(),self.df["fileloc"].tolist()):
+            for imagename,imagecat,imageloc in zip(self.df["filename"].tolist(),self.df["filecategory"].tolist(),self.df["fileloc"].tolist()):
                 img = cv2.imread(imageloc,cv2.IMREAD_GRAYSCALE)
                 start = time.time()
                 faces = hogFaceDetector(img)
@@ -105,15 +135,18 @@ class JpgsFrames:
                     cv2.rectangle(img,(startX,startY),(endX,endY),(0,0,255),2)
                 mslist.append((end-start)*100)
                 findface.append(len(faces))
-                cv2.rectangle(img,(10,10), (120,30), (0,0,0),35)
+                if img.shape[0]>img.shape[1]:
+                    cv2.rectangle(img,(0,0), (img.shape[0]//5,img.shape[1]//8), (0,0,0), thickness =cv2.FILLED)
+                else:
+                    cv2.rectangle(img,(0,0), (img.shape[1]//5,img.shape[0]//8), (0,0,0), thickness =cv2.FILLED)
                 cv2.putText(img,str(round((end-start)*100,2))+"ms",(10,30),cv2.FONT_HERSHEY_COMPLEX,0.7,(255,255,255))
-                cv2.imwrite((path+imagename),img)
-                
+                cv2.imwrite(os.sep.join([path+imagecat,imagename]),img)
+                print(os.sep.join([path+imagecat,imagename]))
                 
         elif  algorithm_name == "cnndlib":
             facedata = os.sep.join([os.getcwd(),"AdditionalFiles","mmod_human_face_detector.dat"])
             cnnFaceDetector = dlib.cnn_face_detection_model_v1(facedata) 
-            for imagename,imageloc in zip(self.df["filename"].tolist(),self.df["fileloc"].tolist()):
+            for imagename,imagecat,imageloc in zip(self.df["filename"].tolist(),self.df["filecategory"].tolist(),self.df["fileloc"].tolist()):
                 img = cv2.imread(imageloc,cv2.IMREAD_GRAYSCALE)
                 start = time.time()
                 faces = cnnFaceDetector(img,0)
@@ -126,10 +159,13 @@ class JpgsFrames:
                     cv2.rectangle(img,(startX,startY),(endX,endY),(0,0,255),2)
                 mslist.append((end-start)*100)
                 findface.append(len(faces))
-                cv2.rectangle(img,(10,10), (120,30), (0,0,0),35)
+                if img.shape[0]>img.shape[1]:
+                    cv2.rectangle(img,(0,0), (img.shape[0]//5,img.shape[1]//8), (0,0,0), thickness =cv2.FILLED)
+                else:
+                    cv2.rectangle(img,(0,0), (img.shape[1]//5,img.shape[0]//8), (0,0,0), thickness =cv2.FILLED)
                 cv2.putText(img,str(round((end-start)*100,2))+"ms",(10,30),cv2.FONT_HERSHEY_COMPLEX,0.7,(255,255,255))
-                cv2.imwrite((path+imagename),img)
-        
+                cv2.imwrite(os.sep.join([path+imagecat,imagename]),img)
+                print(os.sep.join([path+imagecat,imagename]))
 
         self.df[algorithm_name+"-MS"] = mslist
         self.df[algorithm_name+"-FindingFace"] = findface
