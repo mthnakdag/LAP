@@ -71,7 +71,7 @@ class JpgsFrames:
         if  algorithm_name == "haarcascade":
             faceCascade = cv2.CascadeClassifier(cv2.data.haarcascades+"haarcascade_frontalface_default.xml")
             for imagename,imagecat,imageloc in zip(self.df["filename"].tolist(),self.df["filecategory"].tolist(),self.df["fileloc"].tolist()):
-                img = cv2.imread(imageloc,cv2.IMREAD_GRAYSCALE)
+                img = cv2.imread(imageloc)
                 start = time.time()
                 faces = faceCascade.detectMultiScale(img)
                 end = time.time()
