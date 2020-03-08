@@ -6,8 +6,8 @@ jpgsframe = JpgsFrames()
 jpgsframe.createDataFrame()
 jpgsframe.addactualtoframe()
 
-#jpgsframe.findFace("haarcascade")
-jpgsframe.findFace("dnn")
+jpgsframe.findFace("haarcascade")
+#jpgsframe.findFace("dnn")
 #jpgsframe.findFace("hogdlib")
 #jpgsframe.findFace("cnndlib")
 
